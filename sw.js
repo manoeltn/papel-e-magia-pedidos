@@ -1,6 +1,6 @@
 // Guarda os arquivos do app no aparelho para abrir rápido.
 // Os pedidos NÃO ficam aqui: eles vêm sempre do Supabase, depois do login.
-const VERSAO = "pm-pedidos-v1";
+const VERSAO = "pm-pedidos-v2";
 const ARQUIVOS = ["./", "index.html", "config.js", "nuvem.js", "vendor/supabase.js", "manifest.webmanifest",
   "icons/favicon.png", "icons/icon-180.png", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-512.png"];
 
