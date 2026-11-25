@@ -150,6 +150,9 @@ label.f { display: flex; flex-direction: column; gap: 4px; font-size: 13px; colo
 .kid-h { display: flex; align-items: center; gap: 8px; }
 .kid-h strong { font-family: var(--font-display); color: var(--plum); flex: 1; }
 .seg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.seg-ori { grid-template-columns: repeat(4, minmax(0, 1fr)); margin-bottom: 10px; }
+#e-mkt-box[hidden] { display: none; }
+@media (max-width: 560px) { .seg-ori { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .seg button { border: 1.5px solid var(--line); background: #fffafd; border-radius: 12px; padding: 9px 6px; font-weight: 700; color: var(--muted); }
 .seg button[aria-pressed="true"] { border-color: var(--blue); color: var(--blue-dark); background: #e8f2fc; }
 
@@ -296,8 +299,12 @@ if ("serviceWorker" in navigator) window.addEventListener("load", () => navigato
     { id: "whatsapp", nome: "WhatsApp" },
     { id: "instagram", nome: "Instagram" },
     { id: "balcao", nome: "Balcão da loja" },
+    { id: "marketplace", nome: "Marketplace" },
   ];
   const ORI = Object.fromEntries(ORIGEM.map(o => [o.id, o]));
+  const MARKETPLACES = ["Mercado Livre", "Shopee", "Elo7", "Amazon", "Outro"];
+  // "Marketplace · Mercado Livre" quando o pedido veio de uma plataforma
+  const origemNome = p => !p.origem ? "" : p.origem === "marketplace" && p.marketplace?.plataforma ? "Marketplace · " + p.marketplace.plataforma : (ORI[p.origem]?.nome || "");
   const LOJA = "Rua Tabor, 456";
   const PIX = "papelemagia@icloud.com";
   const PRAZO_ARTE_DIAS = 3;
@@ -597,7 +604,7 @@ if ("serviceWorker" in navigator) window.addEventListener("load", () => navigato
       const temas = [...new Set(ks.map(k => k.tema).filter(Boolean))];
       h += `<button class="row" data-abrir="${esc(p.id)}">
         <span class="n num">nº ${esc(p.numero)}</span>
-        <span class="who"><strong>${esc(juntar(ks.map(k => k.nome).filter(Boolean)) || "Sem nome")}${p.exemplo ? '<span class="tag">exemplo</span>' : ""}</strong><span>${esc(p.responsavel || "")}${p.telefone ? " · " + esc(fmtPhone(p.telefone)) : ""}${p.origem ? " · " + esc(ORI[p.origem]?.nome || "") : ""}</span></span>
+        <span class="who"><strong>${esc(juntar(ks.map(k => k.nome).filter(Boolean)) || "Sem nome")}${p.exemplo ? '<span class="tag">exemplo</span>' : ""}</strong><span>${esc(p.responsavel || "")}${p.telefone ? " · " + esc(fmtPhone(p.telefone)) : ""}${p.origem ? " · " + esc(origemNome(p)) : ""}</span></span>
         <span class="sch"><span>${temas.length ? "Tema " + esc(juntar(temas)) : "Tema a definir"}</span><br><span class="ship">${esc(ENT[ent.tipo]?.nome || "")}</span>${pz ? ` · <span class="prazo">Arte até ${fmtDate(pz)}</span>` : ""}</span>
         <span class="sep num" title="Itens produzidos"><span class="hint">${feitos}/${n} prontos</span><span class="prog"><i style="width:${n ? Math.round(feitos / n * 100) : 0}%"></i></span></span>
         <span class="tot r num"><strong>${brl(t.total)}</strong><br>${t.total > 0 ? (t.saldo > 0 ? `<span class="due">falta ${brl(t.saldo)}</span>` : `<span class="paid">pago</span>`) : `<span class="hint">sem itens</span>`}</span>
@@ -725,7 +732,7 @@ if ("serviceWorker" in navigator) window.addEventListener("load", () => navigato
     b += `<section class="sec"><h3>Cliente e entrega</h3><dl class="kv">
       <dt>Responsável</dt><dd>${esc(p.responsavel || "—")}</dd>
       <dt>WhatsApp</dt><dd class="num">${esc(fmtPhone(p.telefone) || "—")}</dd>
-      <dt>Pedido feito por</dt><dd>${esc(ORI[p.origem]?.nome || "Não informado")}</dd>
+      <dt>Pedido feito por</dt><dd>${esc(origemNome(p) || "Não informado")}${p.origem === "marketplace" && p.marketplace?.pedido ? " · pedido " + esc(p.marketplace.pedido) : ""}</dd>
       <dt>Entrega</dt><dd>${esc(ENT[ent.tipo].nome)}${t.frete ? " · frete " + brl(t.frete) : ""}</dd>
       ${ent.tipo !== "retirada" ? `<dt>Endereço</dt><dd>${esc(ent.endereco || "Não informado")}${ent.cep ? " · CEP " + esc(fmtCep(ent.cep)) : ""}</dd>` : ""}
       ${ent.tipo === "sedex" ? `<dt>Rastreio</dt><dd>${esc(ent.rastreio || "Ainda não postado")}</dd>${ent.freteReal ? `<dt>Pago nos Correios</dt><dd class="money-txt">${brl(ent.freteReal)}</dd>` : ""}` : ""}
@@ -804,7 +811,10 @@ if ("serviceWorker" in navigator) window.addEventListener("load", () => navigato
       <section class="paste"><label class="f" for="cola">Colar mensagem do WhatsApp ou Instagram<textarea id="cola" placeholder="Cole aqui a mensagem do cliente. Exemplo:&#10;Nome: Helena&#10;Tema: Jardim encantado&#10;1 Kit M glossy&#10;Squeeze com bico&#10;Nome: Davi&#10;Tema: Dinossauros&#10;2 chaveiros tabuada&#10;Entrega por Sedex"></textarea></label>
         <div class="row-btns"><button class="btn primary small" id="ler">Ler mensagem</button><span class="hint">O app reconhece os produtos do catálogo, as linhas "Nome:", "Tema:", "Escola:", "Série:", "Endereço:" e a forma de entrega. Cada "Nome:" vira uma criança. Confira antes de salvar.</span></div></section>
       <section class="sec"><h3>Cliente</h3>
-        <div class="seg" role="group" aria-label="Por onde chegou o pedido">${ORIGEM.map(o => `<button type="button" data-ori="${o.id}" aria-pressed="${(r.origem || "") === o.id}">${o.nome}</button>`).join("")}</div>
+        <div class="seg seg-ori" role="group" aria-label="Por onde chegou o pedido">${ORIGEM.map(o => `<button type="button" data-ori="${o.id}" aria-pressed="${(r.origem || "") === o.id}">${o.nome}</button>`).join("")}</div>
+        <div class="grid2" id="e-mkt-box"${r.origem === "marketplace" ? "" : " hidden"}>
+        <label class="f">Plataforma<select id="e-mkt">${MARKETPLACES.map(m => `<option${(r.marketplace?.plataforma || "Mercado Livre") === m ? " selected" : ""}>${m}</option>`).join("")}</select></label>
+        <label class="f">Nº do pedido na plataforma<input id="e-mkt-ped" value="${esc(r.marketplace?.pedido || "")}" placeholder="Opcional" autocomplete="off"></label></div>
         <div class="grid2">
         <label class="f">Responsável<input id="e-resp" list="dl-resp" value="${esc(r.responsavel)}" autocomplete="off"></label>
         <label class="f">WhatsApp / telefone<input id="e-tel" inputmode="tel" value="${esc(fmtPhone(r.telefone))}" placeholder="(11) 98765-4321"></label></div>
@@ -909,7 +919,7 @@ if ("serviceWorker" in navigator) window.addEventListener("load", () => navigato
     }
     desenharKids(); linhas(); desenharEntrega();
     ["e-desc", "e-pago"].forEach(id => document.getElementById(id).oninput = totaisEd);
-    document.querySelectorAll("[data-ori]").forEach(btn => btn.onclick = () => { r.origem = btn.dataset.ori; document.querySelectorAll("[data-ori]").forEach(b2 => b2.setAttribute("aria-pressed", b2 === btn)); });
+    document.querySelectorAll("[data-ori]").forEach(btn => btn.onclick = () => { r.origem = btn.dataset.ori; document.querySelectorAll("[data-ori]").forEach(b2 => b2.setAttribute("aria-pressed", b2 === btn)); document.getElementById("e-mkt-box").hidden = r.origem !== "marketplace"; });
     document.querySelectorAll("[data-ent]").forEach(btn => btn.onclick = () => { lerCampos(); if (btn.dataset.ent !== r.entrega.tipo) r.entrega.freteManual = false; r.entrega.tipo = btn.dataset.ent; desenharEntrega(); });
     document.getElementById("e-resp").onchange = e => {
       const c = state.clientes.find(c => c.nome === e.target.value) || state.pedidos.find(p => p.responsavel === e.target.value);
@@ -946,6 +956,7 @@ if ("serviceWorker" in navigator) window.addEventListener("load", () => navigato
     document.getElementById("salvar").onclick = async () => {
       lerCampos();
       const v = id => document.getElementById(id).value.trim();
+      if (r.origem === "marketplace") r.marketplace = { plataforma: v("e-mkt"), pedido: v("e-mkt-ped").trim() }; else delete r.marketplace;
       r.responsavel = v("e-resp"); r.telefone = digits(v("e-tel")); r.formaPagamento = v("e-forma"); r.obs = v("e-obs");
       const novoStatus = v("e-status");
       if (novoStatus !== "recebido" && !r.pagoEm) r.pagoEm = new Date().toISOString();
